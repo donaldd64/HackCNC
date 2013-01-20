@@ -51,7 +51,6 @@ This work is public domain.
 // You'll need this library. Get the interrupt safe version.
 #include <digitalWriteFast.h> // http://code.google.com/p/digitalwritefast/
 #include <LiquidCrystal_SR_LCD3.h> // https://github.com/marcmerlin/NewLiquidCrystal
-
 #include <Servo.h> 
 
 //Servo settings MUST BE AN INT! BETWENEN 0-180
@@ -69,7 +68,6 @@ LiquidCrystal_SR_LCD3 lcd(PIN_LCD_DATA, PIN_LCD_CLOCK, PIN_LCD_STROBE);
 Servo myservo;
 byte pos;
 
-//#define BAUD    (115200)
 #define BAUD 115200
 
 // These will be used in the near future.
@@ -110,96 +108,6 @@ byte pos;
 #define dirPin0 11 //x dir D11 - pin 12
 #define dirPin1 9 //y dir D9 - pin 29
 #define dirPin2 -1 // z dir
-
-// microStepping pins (optional)
-
-#define chanXms1 -1
-#define chanXms2 -1
-#define chanXms3 -1
-#define chanYms1 -1
-#define chanYms2 -1
-#define chanYms3 -1
-#define chanZms1 -1
-#define chanZms2 -1
-#define chanZms3 -1
-
-#define xEnablePin -1
-#define yEnablePin -1
-#define zEnablePin -1
-
-
-#define useEstopSwitch  false
-#define usePowerSwitch  false
-#define useStartSwitch  false
-#define useStopSwitch   false
-#define usePauseSwitch  false
-#define useResumeSwitch false
-#define useStepSwitch   false
-
-// Set to true if your using real switches for MIN positions.
-#define useRealMinX false
-#define useRealMinY false
-#define useRealMinZ false
-
-// Set to true if your using real switches for HOME positions.
-#define useRealHomeX false
-#define useRealHomeY false
-#define useRealHomeZ false
-
-// Set to false if your using real switches for MAX positions.
-#define useRealMaxX false
-#define useRealMaxY false
-#define useRealMaxZ false
-
-// If your using REAL switches you'll need real pins (ignored if using Virtual switches).
-// -1 = not used.
-#define xMinPin -1
-#define yMinPin -1
-#define zMinPin -1
-
-#define xHomePin -1
-#define yHomePin -1
-#define zHomePin -1
-
-#define xMaxPin -1
-#define yMaxPin -1
-#define zMaxPin -1
-
-//#define powerSwitchIsMomentary true // Set to true if your using a momentary switch.
-//#define powerPin    -1 // Power switch. Optional
-//#define powerLedPin -1 // Power indicator. Optional
-
-//#define eStopPin         -1 // E-Stop switch. You really, REALLY should have this one.
-//#define eStopLedPin      -1 // E-Stop indicator. Optional
-
-//#define startPin  -1 // CNC Program start switch.  Optional
-//#define stopPin   -1 // CNC Stop program switch.   Optional
-//#define pausePin  -1 // CNC Pause program switch.  Optional
-//#define resumePin -1 // CNC Resume program switch. Optional
-//#define stepPin   -1 // CNC Program step switch.   Optional
-
-// Signal inversion for real switch users. (false = ground trigger signal, true = +5vdc trigger signal.)
-// Note: Inverted switches will need pull-down resistors (less than 10kOhm) to lightly ground the signal wires.
-#define xMinPinInverted false
-#define yMinPinInverted false
-#define zMinPinInverted false
-
-#define xHomePinInverted false
-#define yHomePinInverted false
-#define zHomePinInverted false
-
-#define xMaxPinInverted false
-#define yMaxPinInverted false
-#define zMaxPinInverted false
-
-#define eStopPinInverted  false
-#define powerPinInverted  false
-#define probePinInverted  false
-#define startPinInverted  false
-#define stopPinInverted   false
-#define pausePinInverted  false
-#define resumePinInverted false
-#define stepPinInverted   false
 
 // Where should the VIRTUAL Min switches be set to (ignored if using real switches).
 // Set to whatever you specified in the StepConf wizard.
@@ -292,18 +200,6 @@ boolean yMaxStateOld=false;
 boolean zMaxStateOld=false;
 
 
-// no support for these at the moment
-/*
-boolean eStopStateOld=false;
- boolean powerStateOld=false;
- //boolean probeStateOld=false;
- boolean startStateOld=false;
- boolean stopStateOld=false;
- boolean pauseStateOld=false;
- boolean resumeStateOld=false;
- boolean stepStateOld=false;
- */
-
 // Soft Limit and Power
 boolean eStopState=false;
 boolean powerState=false;
@@ -353,43 +249,81 @@ void jog(float x, float y, float z)
 
   // only check the limit switches if it's not homed
   // We want to mark as true if either pos or homed are true, not both
-  // if(!useRealMinX){if(pos_x > xMin || ( pos_x <= xMin && !xHomed)){xMinState=true;}else{xMinState=false;}}else{xMinState=digitalReadFast(xMinPin);if(xMinPinInverted)xMinState=!xMinState;}
   // make some of this a function?
   // TODO: Home errors for all axis should go to the LCD
-  if(!useRealMinX){
-    xMinState=true;
-    if(x <= xMin && xHomed){
-      xMinState=false;
-      // This is probably a good opportunity to update the LCD
-      lcd.setCursor (0, 2);
-      lcd.print(F("X axis limit Reached"));
-      clearLine2 = true;
-    }
-    else if(clearLine2){
-      lcd.setCursor (0, 2);
-      lcd.print(F("                    "));
-      clearLine2 = false;
-    }
-  }else{
-    xMinState=digitalReadFast(xMinPin);
-    if(xMinPinInverted){
-      xMinState=!xMinState;
-    }
+  xMinState=true;
+  if(x <= xMin && xHomed){
+    xMinState=false;
+    // This is probably a good opportunity to update the LCD
+    lcd.setCursor (0, 2);
+    lcd.print(F("X axis limit Reached"));
+    clearLine2 = true;
+  }
+  else if(clearLine2){
+    lcd.setCursor (0, 2);
+    lcd.print(F("                    "));
+    clearLine2 = false;
   }
 
-  if(!useRealMinY){yMinState=true;if(y <= yMin && yHomed){yMinState=false;lcd.setCursor (0, 2);lcd.print(F("Y axis limit Reached"));clearLine2 = true;}else if(clearLine2){lcd.setCursor (0, 2);lcd.print(F("                    "));clearLine2 = false;}}else{yMinState=digitalReadFast(yMinPin);if(yMinPinInverted)yMinState=!yMinState;}
-  if(!useRealMinZ){zMinState=true;if(z <= zMin && zHomed){zMinState=false;lcd.setCursor (0, 2);lcd.print(F("Z axis limit Reached"));clearLine2 = true;}else if(clearLine2){lcd.setCursor (0, 2);lcd.print(F("                    "));clearLine2 = false;}}else{zMinState=digitalReadFast(zMinPin);if(zMinPinInverted)zMinState=!zMinState;}
+  yMinState=true;
+  if(y <= yMin && yHomed){
+    yMinState=false;
+    lcd.setCursor (0, 2);
+    lcd.print(F("Y axis limit Reached"));
+    clearLine2 = true;
+  }else if(clearLine2){
+    lcd.setCursor (0, 2);
+    lcd.print(F("                    "));
+	clearLine2 = false;
+  }
+
+  zMinState=true;
+  if(z <= zMin && zHomed){
+    zMinState=false;
+	lcd.setCursor (0, 2);
+	lcd.print(F("Z axis limit Reached"));
+	clearLine2 = true;
+  }else if(clearLine2){
+    lcd.setCursor (0, 2);
+	lcd.print(F("                    "));
+	clearLine2 = false;
+  }
 
   // don't really need the homed question here, because if the machine is unhomed there will be physical limits as to how much it can move
-  if(!useRealMaxX){if(x > xMax){xMaxState=true;}else{xMaxState=false;}}else{xMaxState=digitalReadFast(xMaxPin);if(xMaxPinInverted)xMaxState=!xMaxState;}
-  if(!useRealMaxY){if(y > yMax){yMaxState=true;}else{yMaxState=false;}}else{yMaxState=digitalReadFast(yMaxPin);if(yMaxPinInverted)yMaxState=!yMaxState;}
-  if(!useRealMaxZ){if(z > zMax){zMaxState=true;}else{zMaxState=false;}}else{zMaxState=digitalReadFast(zMaxPin);if(zMaxPinInverted)zMaxState=!zMaxState;}
+  if(x > xMax){
+    xMaxState=true;
+  }else{
+    xMaxState=false;
+  }
+  
+  if(y > yMax){
+    yMaxState=true;
+  }else{
+    yMaxState=false;
+  }
+  if(z > zMax){
+    zMaxState=true;
+  }else{
+    zMaxState=false;
+  }
 
   // These are only used to send a serial character if the machine is homed.
   // I can't see how they'd work at all with virtual home switches.
-  if(!useRealHomeX){if(x > xHome){xHomeState=true;}else{xHomeState=false;}}else{xHomeState=digitalReadFast(xHomePin);if(xHomePinInverted)xHomeState=!xHomeState;}
-  if(!useRealHomeY){if(y > yHome){yHomeState=true;}else{yHomeState=false;}}else{yHomeState=digitalReadFast(yHomePin);if(yHomePinInverted)yHomeState=!yHomeState;}
-  if(!useRealHomeZ){if(z > zHome){zHomeState=true;}else{zHomeState=false;}}else{zHomeState=digitalReadFast(zHomePin);if(zHomePinInverted)zHomeState=!zHomeState;}
+  if(x > xHome){
+    xHomeState=true;
+  }else{
+    xHomeState=false;
+  }
+  if(y > yHome){
+    yHomeState=true;
+  }else{
+    yHomeState=false;
+  }
+  if(z > zHome){
+    zHomeState=true;
+  }else{
+    zHomeState=false;
+  }
 
   if(xMinState != xMinStateOld){xMinStateOld=xMinState;Serial.print("x");Serial.print(xMinState);}
   if(yMinState != yMinStateOld){yMinStateOld=yMinState;Serial.print("y");Serial.print(yMinState);}
@@ -482,11 +416,8 @@ void stepLight() // Set by jog() && Used by loop()
     if(stepper1Pos != stepper1Goto){busy++;if(stepper1Pos > stepper1Goto){digitalWriteFast(dirPin1,!dirState1);digitalWriteFast(stepPin1,stepState);stepper1Pos--;}else{digitalWriteFast(dirPin1, dirState1);digitalWriteFast(stepPin1,stepState);stepper1Pos++;}}
     // if(stepper2Pos != stepper2Goto){busy++;if(stepper2Pos > stepper2Goto){digitalWriteFast(dirPin2,!dirState2);digitalWriteFast(stepPin2,stepState);stepper2Pos--;}else{digitalWriteFast(dirPin2, dirState2);digitalWriteFast(stepPin2,stepState);stepper2Pos++;}}
 
-
-
     // we have a busy value, so we're still moving.
     // This is meant to flash an LED when it's busy
-    
     if(busy){
       digitalWriteFast(idleIndicator,HIGH);
       // increment to say we're still busy.
@@ -536,23 +467,6 @@ void setup()
   lcd.setCursor (0, 0);
   lcd.print(F("hackCNC             "));
 
-  // Setup Min limit switches.
-  if(useRealMinX){pinMode(xMinPin,INPUT);if(!xMinPinInverted)digitalWriteFast(xMinPin,HIGH);}
-  if(useRealMinY){pinMode(yMinPin,INPUT);if(!yMinPinInverted)digitalWriteFast(yMinPin,HIGH);}
-  if(useRealMinZ){pinMode(zMinPin,INPUT);if(!zMinPinInverted)digitalWriteFast(zMinPin,HIGH);}
-
-  // Setup Max limit switches.
-  if(useRealMaxX){pinMode(xMaxPin,INPUT);if(!xMaxPinInverted)digitalWriteFast(xMaxPin,HIGH);}
-  if(useRealMaxY){pinMode(yMaxPin,INPUT);if(!yMaxPinInverted)digitalWriteFast(yMaxPin,HIGH);}
-  if(useRealMaxZ){pinMode(zMaxPin,INPUT);if(!zMaxPinInverted)digitalWriteFast(zMaxPin,HIGH);}
-
-
-  // Setup Homing switches.
-  if(useRealHomeX){pinMode(xHomePin,INPUT);if(!xHomePinInverted)digitalWriteFast(xHomePin,HIGH);}
-  if(useRealHomeY){pinMode(yHomePin,INPUT);if(!yHomePinInverted)digitalWriteFast(yHomePin,HIGH);}
-  if(useRealHomeZ){pinMode(zHomePin,INPUT);if(!zHomePinInverted)digitalWriteFast(zHomePin,HIGH);}
-
-
   // Setup step pins.
   pinMode(stepPin0,OUTPUT);
   pinMode(stepPin1,OUTPUT);
@@ -562,18 +476,6 @@ void setup()
   pinMode(dirPin0,OUTPUT);
   pinMode(dirPin1,OUTPUT);
   //  pinMode(dirPin2,OUTPUT);
-
-
-  // Setup eStop, power, start, stop, pause, resume, program step, spindle, coolant, LED and probe pins.
-  //if(useEstopSwitch){pinMode(eStopPin,INPUT);if(!eStopPinInverted){digitalWriteFast(eStopPin,HIGH);}}
-  //if(usePowerSwitch){pinMode(powerPin,INPUT);if(!powerPinInverted){digitalWriteFast(powerPin,HIGH);}}
-  //if(useStartSwitch){pinMode(startPin,INPUT);if(!startPinInverted){digitalWriteFast(startPin,HIGH);}}
-  //if(useStopSwitch){pinMode(stopPin,INPUT);if(!stopPinInverted){digitalWriteFast(stopPin,HIGH);}}
-  //if(usePauseSwitch){pinMode(pausePin,INPUT);if(!pausePinInverted){digitalWriteFast(pausePin,HIGH);}}
-  //if(useResumeSwitch){pinMode(resumePin,INPUT);if(!resumePinInverted){digitalWriteFast(resumePin,HIGH);}}
-  //if(useStepSwitch){pinMode(stepPin,INPUT);if(!stepPinInverted){digitalWriteFast(stepPin,HIGH);}}
-  //if(powerLedPin > 0){pinMode(powerLedPin,OUTPUT);digitalWriteFast(powerLedPin,HIGH);}
-  //if(eStopLedPin>0){pinMode(eStopLedPin,OUTPUT);digitalWriteFast(eStopLedPin,LOW);}
 
   // Setup idle indicator led.
   pinMode(idleIndicator,OUTPUT);
@@ -606,16 +508,6 @@ void setup()
 
 void loop()
 {
-  // These are all for physical switches, which we don't have
-  //if(useEstopSwitch==true){boolean eStopState=digitalReadFast(eStopPin);if(eStopPinInverted){eStopState=!eStopState;}if(eStopState != eStopStateOld || eStopStateOld){eStopStateOld=eStopState;Serial.print("e");Serial.println(eStopState);delay(500);}}
-  //if(usePowerSwitch==true){boolean powerState=digitalReadFast(powerPin);if(powerPinInverted){powerState=!powerState;}if(powerState != powerStateOld){powerStateOld=powerState;if(powerSwitchIsMomentary){Serial.println("pt");}else{Serial.print("p");Serial.println(powerState);}}}
-  //if(useStartSwitch==true){boolean startState=digitalReadFast(startPin);if(startPinInverted){startState=!startState;}if(startState != startStateOld){startStateOld=startState;Serial.print("h");Serial.println(startState);}}
-  //if(useStopSwitch==true){boolean stopState=digitalReadFast(stopPin);if(stopPinInverted){stopState=!stopState;}if(stopState != stopStateOld){stopStateOld=stopState;Serial.print("h");Serial.println(stopState+2);}}
-  //if(usePauseSwitch==true){boolean pauseState=digitalReadFast(pausePin);if(pausePinInverted){pauseState=!pauseState;}if(pauseState != pauseStateOld){pauseStateOld=pauseState;Serial.print("h");Serial.println(pauseState+4);}}
-  //if(useResumeSwitch==true){boolean resumeState=digitalReadFast(resumePin);if(resumePinInverted){resumeState=!resumeState;}if(resumeState != resumeStateOld){resumeStateOld=resumeState;Serial.print("h");Serial.println(resumeState+6);}}
-  //if(useStepSwitch==true){boolean stepState=digitalReadFast(stepPin);if(stepPinInverted){stepState=!stepState;}if(stepState != stepStateOld){stepStateOld=stepState;Serial.print("h");Serial.println(stepState+8);}}
-
-
   // listen for serial commands
   while(Serial.available() > 0) {
     buffer[sofar++]=Serial.read();
